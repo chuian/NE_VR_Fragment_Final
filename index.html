@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Sheridan | Nightmare Escape</title>
+    <script src="https://unpkg.com/aframe@1.4.2/dist/aframe-master.min.js"></script>
+    <style>
+        #loading-screen {
+            position: absolute; z-index: 999; top: 0; left: 0; width: 100%; height: 100%;
+            background: #001a33; color: #3efab4; display: flex; flex-direction: column; align-items: center;
+            justify-content: center; font-family: 'Courier New', monospace; font-weight: bold;
+            text-align: center; cursor: pointer;
+        }
+        /* Mobile Control HUD */
+        .controls-hud {
+            position: absolute; bottom: 25px; left: 25px; z-index: 1000;
+            display: flex; flex-direction: column; gap: 10px; user-select: none;
+        }
+        .row { display: flex; justify-content: center; gap: 10px; }
+        .btn {
+            width: 60px; height: 60px; background: rgba(0, 247, 255, 0.1);
+            border: 2px solid #3efab4; color: #3efab4; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px; touch-action: none;
+        }
+        .btn:active { background: rgba(62, 250, 180, 0.3); }
+    </style>
+  </head>
+  <body>
+
+    <div id="loading-screen"><div style="font-size: 48px; margin-bottom: 40px; letter-spacing: 2px;">Sheridan N_ghtMare Escape AR Glitch </div>INITIALIZING BUILDINGS PROTOCOL...<br>TAP TO START</div>
+
+    <div class="controls-hud">
+        <div class="row"><div class="btn" id="forwardBtn">⬆</div></div>
+        <div class="row">
+            <div class="btn" id="leftBtn">◀</div>
+            <div class="btn" id="backBtn">⬇</div>
+            <div class="btn" id="rightBtn">▶</div>
+        </div>
+    </div>
+
+    <div class="controls-hud" style="left: auto; right: 25px;">
+        <div class="row" style="gap: 20px;">
+            <div class="btn" id="upBtn" style="background: rgba(62, 250, 180, 0.15); border: 2px solid #00f7ff;">⬆⬆</div>
+            <div class="btn" id="downBtn" style="background: rgba(62, 250, 180, 0.15); border: 2px solid #00f7ff;">⬇⬇</div>
+        </div>
+    </div>
+
+    <script>
+      let moveDir = { forward: 0, side: 0, vertical: 0 };
+      const setupBtn = (id, prop, val) => {
+          const el = document.getElementById(id);
+          const start = (e) => { e.preventDefault(); moveDir[prop] = val; };
+          const end = (e) => { e.preventDefault(); moveDir[prop] = 0; };
+          el.addEventListener('touchstart', start);
+          el.addEventListener('touchend', end);
+          el.addEventListener('mousedown', start);
+          el.addEventListener('mouseup', end);
+      };
+
+      AFRAME.registerComponent('nightmare-flight', {
+        tick: function (time, delta) {
+          if (moveDir.forward === 0 && moveDir.side === 0 && moveDir.vertical === 0) return;
+          const rig = this.el;
+          const cam = document.querySelector('a-camera');
+          const direction = new THREE.Vector3();
+          cam.object3D.getWorldDirection(direction);
+          direction.multiplyScalar(-1); 
+          
+          const speed = 0.35;
+          const floorLimit = 0.5;
+          const pos = rig.getAttribute('position');
+          let newX = pos.x;
+          let newY = pos.y;
+          let newZ = pos.z;
+
+          if (moveDir.forward !== 0) {
+            newX += direction.x * moveDir.forward * speed;
+            newY += direction.y * moveDir.forward * speed;
+            newZ += direction.z * moveDir.forward * speed;
+          }
+          if (moveDir.side !== 0) {
+            const sideDir = new THREE.Vector3(1, 0, 0);
+            sideDir.applyQuaternion(cam.object3D.quaternion);
+            newX += sideDir.x * moveDir.side * speed;
+            newY += sideDir.y * moveDir.side * speed;
+            newZ += sideDir.z * moveDir.side * speed;
+          }
+          if (moveDir.vertical !== 0) {
+            newY += moveDir.vertical * speed;
+          }
+          
+          newY = Math.max(floorLimit, newY);
+          
+          rig.setAttribute('position', {
+            x: newX,
+            y: newY,
+            z: newZ
+          });
+        }
+      });
+
+      AFRAME.registerComponent('dagger-logic', {
+        init: function () {
+          this.el.addEventListener('click', () => {
+            document.querySelector('#SCAET').setAttribute('material', 'shader: flat; color: #3efab4');
+            document.querySelector('#dagger-blade').setAttribute('material', 'shader: flat; color: #3efab4');
+          });
+        }
+      });
+    </script>
+
+    <a-scene fog="type: exponential; color: #020617; density: 0.008" cursor="rayOrigin: mouse">
+      
+      <a-entity id="rig" position="0 2 65" nightmare-flight>
+        <a-camera look-controls wasd-controls="acceleration: 150; fly: true">
+            <a-cursor color="#3efab4" raycaster="objects: .interactable"></a-cursor>
+        </a-camera>
+      </a-entity>
+
+      <a-entity id="bulletin-board" position="0 3 58">
+        <a-plane width="6" height="5" material="color: #00f7ff; opacity: 0.1; transparent: true; side: double"></a-plane>
+        <a-box width="6.1" height="0.1" depth="0.1" position="0 2.5 0" color="#00f7ff"></a-box>
+        <a-box width="6.1" height="0.1" depth="0.1" position="0 -2.5 0" color="#00f7ff"></a-box>
+        <a-text value="CONTROLS:\n w|a|s|d or Arrows to navigate \nLook with Mouse \n\nMobile users can use on-screen keys" color="#ffffff" align="center" position="0 1.8 0.01" width="5"></a-text>
+        <a-text value="A blade points up from a rooftop high,\nIgnore the red that tries to catch your eye.\n\nTouch the steel with no hand bands,\nAnd watch for the building that change in land.\n\nThe mint-marked land is calling you." 
+                color="#3efab4" align="center" position="0 -0.5 0.01" width="4.5" font="monoid"></a-text>
+      </a-entity>
+
+      <a-entity id="sky-lines">
+        <a-box position="0 40 10" width="2" height="2" depth="1000" material="shader: flat; color: #600; opacity: 0.3; transparent: true">
+            <a-box width="2.2" height="2.2" depth="80" material="shader: flat; color: #ff0000" animation="property: position; from: 0 0 -500; to: 0 0 500; loop: true; dur: 2000; easing: linear"></a-box>
+        </a-box>
+        <a-box position="0 55 15" rotation="0 90 0" width="2" height="2" depth="1000" material="shader: flat; color: #044; opacity: 0.3; transparent: true">
+            <a-box width="2.2" height="2.2" depth="60" material="shader: flat; color: #00f7ff" animation="property: position; from: 0 0 -500; to: 0 0 500; loop: true; dur: 2500; easing: linear"></a-box>
+        </a-box>
+        <a-box position="-10 32 10" rotation="0 45 0" width="1.8" height="1.8" depth="1200" material="shader: flat; color: #404; opacity: 0.3; transparent: true">
+            <a-box width="2.2" height="2.2" depth="90" material="shader: flat; color: #bc13fe" animation="property: position; from: 0 0 -600; to: 0 0 600; loop: true; dur: 4000; easing: linear"></a-box>
+        </a-box>
+        <a-box position="15 30 5" rotation="0 90 0" width="1.5" height="1.5" depth="1000" material="shader: flat; color: #064; opacity: 0.3; transparent: true">
+            <a-box width="1.7" height="1.7" depth="50" material="shader: flat; color: #3efab4" animation="property: position; from: 0 0 500; to: 0 0 -500; loop: true; dur: 4000; easing: linear"></a-box>
+        </a-box>
+        <a-box position="20 45 -5" rotation="0 -45 0" width="1" height="1" depth="1200" material="shader: flat; color: #333; opacity: 0.2; transparent: true">
+            <a-box width="1.2" height="1.2" depth="30" material="shader: flat; color: #ffffff" animation="property: position; from: 0 0 -600; to: 0 0 600; loop: true; dur: 1800; easing: linear"></a-box>
+        </a-box>
+        <a-box position="-40 80 -10" rotation="0 90 0" width="1.5" height="1.5" depth="1000" material="shader: flat; color: #550; opacity: 0.2; transparent: true">
+            <a-box width="1.8" height="1.8" depth="40" material="shader: flat; color: #ffff00" animation="property: position; from: 0 0 -500; to: 0 0 500; loop: true; dur: 4500; easing: linear"></a-box>
+        </a-box>
+      </a-entity>
+
+      <a-entity id="ground-to-sky-flow">
+        <a-entity position="-15 0 -10" rotation="-90 0 45">
+          <a-cylinder radius="0.1" height="100" material="shader: flat; color: #00f7ff; opacity: 0.4; transparent: true">
+            <a-box width="0.3" height="10" depth="0.3" material="shader: flat; color: #ffffff" animation="property: position; from: 0 -50 0; to: 0 50 0; loop: true; dur: 3000; easing: linear"></a-box>
+          </a-cylinder>
+        </a-entity>
+        <a-entity position="25 0 20" rotation="-70 0 -30">
+          <a-cylinder radius="0.1" height="120" material="shader: flat; color: #bc13fe; opacity: 0.3; transparent: true">
+            <a-box width="0.3" height="15" depth="0.3" material="shader: flat; color: #bc13fe" animation="property: position; from: 0 -60 0; to: 0 60 0; loop: true; dur: 4500; easing: linear"></a-box>
+          </a-cylinder>
+        </a-entity>
+        <a-entity position="20 0 40" rotation="-110 0 0">
+          <a-cylinder radius="0.05" height="150" material="shader: flat; color: #3efab4; opacity: 0.5; transparent: true">
+            <a-box width="0.2" height="8" depth="0.2" material="shader: flat; color: #ffffff" animation="property: position; from: 0 -75 0; to: 0 75 0; loop: true; dur: 2500; easing: linear"></a-box>
+          </a-cylinder>
+        </a-entity>
+        <a-entity position="10 0 30" rotation="-45 45 0">
+          <a-cylinder radius="0.08" height="200" material="shader: flat; color: #ff0000; opacity: 0.2; transparent: true">
+            <a-box width="0.2" height="20" depth="0.2" material="shader: flat; color: #ff0000" animation="property: position; from: 0 -100 0; to: 0 100 0; loop: true; dur: 1500; easing: linear"></a-box>
+          </a-cylinder>
+        </a-entity>
+      </a-entity>
+
+      <a-sky src="https://cdn.glitch.global/605e2a51-d45f-4d87-a285-9410ad350515/night_city.jpg?v=1675661234567" rotation="0 -90 0"></a-sky>
+      <a-plane rotation="-90 0 0" width="1000" height="1000" color="#3d2b1f"></a-plane>
+      <a-grid position="0 0.01 0" width="1000" height="1000" color="#00f7ff" opacity="0.2"></a-grid>
+
+      <a-box id="SCAET" position="-20 8 -15" width="28" height="16" depth="10" color="#003366">
+        <a-text value="SCAET" align="center" position="0 16 5" color="#00f7ff" scale="7 7 7"></a-text>
+      </a-box>
+      <a-box id="J-WING" position="-35 6 10" width="10" height="12" depth="35" color="#003366">
+        <a-text value="J-WING" align="center" position="0 12 18" color="#00f7ff" scale="7 7 7"></a-text>
+      </a-box>
+      <a-box id="RESIDENCE" position="-15 7.5 45" width="12" height="15" depth="12" color="#003366">
+        <a-text value="RESIDENCE" align="center" position="0 15 7" color="#00f7ff" scale="7 7 7"></a-text>
+      </a-box>
+      <a-box id="COMMONS" position="0 6 5" width="16" height="12" depth="16" color="#ff0000" material="shader: flat; opacity: 0.6; transparent: true">
+        <a-text value="COMMONS" align="center" position="0 12 9" color="#ffffff" scale="7 7 7"></a-text>
+        <a-box width="16.2" height="12.2" depth="16.2" material="wireframe: true; color: #ff0000; opacity: 1"></a-box>
+      </a-box>
+      <a-box id="CAFETERIA" position="35 5 15" width="20" height="10" depth="15" color="#003366">
+        <a-text value="CAFETERIA" align="center" position="0 10 8" color="#00f7ff" scale="7 7 7"></a-text>
+      </a-box>
+      <a-box id="ATHLETICS" position="40 10 -30" width="25" height="20" depth="25" color="#8B4513">
+        <a-text value="ATHLETICS" align="center" position="0 20 13" color="#00f7ff" scale="7 7 7"></a-text>
+      </a-box>
+
+      <a-box position="15 7 -25" width="20" height="14" depth="8" color="#001a33" opacity="0.8"></a-box>
+      <a-cylinder position="60 6 10" radius="10" height="12" color="#001a33" opacity="0.8"></a-cylinder>
+      <a-box position="-50 6 -40" width="15" height="12" depth="40" color="#001a33" opacity="0.8"></a-box>
+      <a-box position="-60 5 -5" width="10" height="10" depth="20" color="#001a33" opacity="0.8"></a-box>
+      <a-box position="80 3 50" width="30" height="6" depth="10" color="#001a33" opacity="0.6"></a-box>
+
+      <a-entity id="dagger-group" class="interactable" dagger-logic position="35 11 15" scale="0.4 0.4 0.4" animation="property: rotation; to: 0 360 0; loop: true; dur: 3000; easing: linear">
+        <a-box visible="false" width="4" height="6" depth="4" class="interactable"></a-box>
+        <a-cone id="dagger-blade" shader="flat" color="#ffffff" radius-bottom="0.4" radius-top="0.01" height="3" position="0 1.5 0"></a-cone>
+        <a-box color="#5d6d7e" width="1.5" height="0.2" depth="0.4" position="0 0 0"></a-box>
+        <a-cylinder color="#2c3e50" radius="0.15" height="1" position="0 -0.6 0"></a-cylinder>
+      </a-entity>
+
+      <a-entity position="0 3 55" rotation="0 -90 0" scale="4 4 4">
+        <a-gltf-model src="cybrMin/source/cyberpunk+minotaur+3d+model.glb"></a-gltf-model>
+      </a-entity>
+
+      <a-light type="ambient" color="#44b" intensity="1.2"></a-light>
+      <a-light type="directional" position="5 100 5" intensity="1.5" color="#ffffff"></a-light>
+      <a-light type="hemisphere" color="#00f7ff" groundColor="#3d2b1f" intensity="1.0"></a-light>
+
+    </a-scene>
+
+    <script>
+        window.onload = () => {
+            setupBtn('forwardBtn', 'forward', 1);
+            setupBtn('backBtn', 'forward', -1);
+            setupBtn('leftBtn', 'side', -1);
+            setupBtn('rightBtn', 'side', 1);
+            setupBtn('upBtn', 'vertical', 1);
+            setupBtn('downBtn', 'vertical', -1);
+            document.body.addEventListener('click', () => {
+                document.getElementById('loading-screen').style.display = 'none';
+            });
+        };
+    </script>
+  </body>
+</html>
